@@ -1,0 +1,25 @@
+{
+  "feature_config": "FeatureConfig(text_embedding_model='paraphrase-multilingual-MiniLM-L12-v2', text_embedding_device='auto', text_fields_to_embed=['\u041d\u0430\u0438\u043c\u0435\u043d\u043e\u0432\u0430\u043d\u0438\u0435 \u043e\u0431\u044a\u0435\u043a\u0442\u0430 \u0437\u0430\u043a\u0443\u043f\u043a\u0438_cleaned', '\u041d\u0430\u0438\u043c\u0435\u043d\u043e\u0432\u0430\u043d\u0438\u0435 \u0437\u0430\u043a\u0443\u043f\u043a\u0438_cleaned', '\u0417\u0430\u043a\u0430\u0437\u0447\u0438\u043a_cleaned', '\u0422\u0440\u0435\u0431\u043e\u0432\u0430\u043d\u0438\u044f \u043a \u0443\u0447\u0430\u0441\u0442\u043d\u0438\u043a\u0430\u043c_cleaned', '\u041a\u0440\u0438\u0442\u0435\u0440\u0438\u0438 \u043e\u0446\u0435\u043d\u043a\u0438 \u0437\u0430\u044f\u0432\u043e\u043a_cleaned'], categorical_encoding_method='onehot', max_categories_per_feature=50, categorical_fields=['\u0421\u043f\u043e\u0441\u043e\u0431 \u043e\u043f\u0440\u0435\u0434\u0435\u043b\u0435\u043d\u0438\u044f \u043f\u043e\u0441\u0442\u0430\u0432\u0449\u0438\u043a\u0430', '\u0420\u0435\u0433\u0438\u043e\u043d', '\u0412\u0430\u043b\u044e\u0442\u0430', '\u0418\u0441\u0442\u043e\u0447\u043d\u0438\u043a \u0444\u0438\u043d\u0430\u043d\u0441\u0438\u0440\u043e\u0432\u0430\u043d\u0438\u044f', '\u0421\u0442\u0430\u0442\u0443\u0441 \u0437\u0430\u043a\u0443\u043f\u043a\u0438', '\u042d\u043b\u0435\u043a\u0442\u0440\u043e\u043d\u043d\u0430\u044f \u043f\u043b\u043e\u0449\u0430\u0434\u043a\u0430'], numerical_normalization_method='standard', numerical_fields=['\u041d\u0430\u0447\u0430\u043b\u044c\u043d\u0430\u044f (\u043c\u0430\u043a\u0441\u0438\u043c\u0430\u043b\u044c\u043d\u0430\u044f) \u0446\u0435\u043d\u0430 \u043a\u043e\u043d\u0442\u0440\u0430\u043a\u0442\u0430_parsed', '\u0426\u0435\u043d\u0430 \u043a\u043e\u043d\u0442\u0440\u0430\u043a\u0442\u0430_parsed', '\u0420\u0430\u0437\u043c\u0435\u0440 \u043e\u0431\u0435\u0441\u043f\u0435\u0447\u0435\u043d\u0438\u044f \u0437\u0430\u044f\u0432\u043a\u0438_parsed', '\u0420\u0430\u0437\u043c\u0435\u0440 \u043e\u0431\u0435\u0441\u043f\u0435\u0447\u0435\u043d\u0438\u044f \u0438\u0441\u043f\u043e\u043b\u043d\u0435\u043d\u0438\u044f \u043a\u043e\u043d\u0442\u0440\u0430\u043a\u0442\u0430_parsed'], temporal_encoding_method='cyclical', reference_date=None, date_fields=['\u0414\u0430\u0442\u0430 \u043f\u0443\u0431\u043b\u0438\u043a\u0430\u0446\u0438\u0438', '\u0414\u0430\u0442\u0430 \u043e\u043a\u043e\u043d\u0447\u0430\u043d\u0438\u044f \u043f\u043e\u0434\u0430\u0447\u0438 \u0437\u0430\u044f\u0432\u043e\u043a', '\u0414\u0430\u0442\u0430 \u043f\u043e\u0434\u0432\u0435\u0434\u0435\u043d\u0438\u044f \u0438\u0442\u043e\u0433\u043e\u0432'], fusion_method='concatenate', output_dimension=None, batch_size=32, cache_embeddings=True)",
+  "clustering_config": "ClusteringConfig(umap_n_components=50, umap_n_neighbors=15, umap_min_dist=0.1, umap_metric='cosine', umap_random_state=42, hdbscan_min_cluster_size=5, hdbscan_min_samples=None, hdbscan_cluster_selection_epsilon=0.0, hdbscan_cluster_selection_method='eom', hdbscan_metric='euclidean', hdbscan_allow_single_cluster=False, preprocess_with_pca=True, pca_n_components=100, scale_features=True, n_jobs=-1, memory=None, assign_outliers_to_nearest=True, outlier_threshold=0.5)",
+  "similarity_config": "ContrastiveLearningConfig(input_dim=1987, hidden_dims=[256, 128], embedding_dim=64, dropout_rate=0.2, batch_size=32, learning_rate=0.001, weight_decay=0.0001, epochs=50, margin=1.0, temperature=0.07, positive_pair_strategy='same_cluster', negative_pair_strategy='different_cluster', pairs_per_sample=2, hard_negative_mining=True, validation_split=0.2, early_stopping_patience=10, device='cpu')",
+  "faiss_config": "FaissConfig(index_type='IVF', metric_type='cosine', dimension=64, nlist=100, nprobe=10, hnsw_m=32, hnsw_ef_construction=200, hnsw_ef_search=128, pq_m=8, pq_nbits=8, training_samples=10000, training_fraction=0.1, use_gpu=False, gpu_id=0, search_batch_size=1024, normalize_vectors=True)",
+  "enable_clustering": true,
+  "enable_similarity_learning": true,
+  "enable_faiss_index": true,
+  "train_on_all_data": true,
+  "validation_split": 0.2,
+  "search_k": 10,
+  "min_similarity_threshold": 0.0,
+  "include_cluster_info": true,
+  "include_similarity_breakdown": true,
+  "batch_size": 32,
+  "n_jobs": -1,
+  "output_format": {
+    "include_full_tenders": true,
+    "include_breakdown": true,
+    "include_explanation": true,
+    "include_metadata": true,
+    "pretty_print": true,
+    "indent": 2
+  }
+}

@@ -1,0 +1,78 @@
+{
+  "training_date": "2026-04-23T22:10:59",
+  "n_tenders": 1000,
+  "model_type": "ML Retrospective Analyzer",
+  "components_enabled": {
+    "clustering": true,
+    "similarity_learning": true,
+    "faiss_index": true
+  },
+  "feature_dimensions": {
+    "text": 1920,
+    "categorical": 60,
+    "numerical": 4,
+    "temporal": 8,
+    "total": 1992
+  },
+  "feature_matrix_shape": [
+    1000,
+    1987
+  ],
+  "clustering": {
+    "n_clusters": 39,
+    "n_outliers": 0,
+    "cluster_distribution": {
+      "0": 9,
+      "1": 27,
+      "2": 83,
+      "3": 17,
+      "4": 8,
+      "5": 71,
+      "6": 10,
+      "7": 35,
+      "8": 15,
+      "9": 7,
+      "10": 10,
+      "11": 35,
+      "12": 32,
+      "13": 18,
+      "14": 23,
+      "15": 17,
+      "16": 114,
+      "17": 42,
+      "18": 15,
+      "19": 27,
+      "20": 56,
+      "21": 10,
+      "22": 13,
+      "23": 44,
+      "24": 15,
+      "25": 25,
+      "26": 12,
+      "27": 13,
+      "28": 11,
+      "29": 25,
+      "30": 8,
+      "31": 11,
+      "32": 17,
+      "33": 26,
+      "34": 23,
+      "35": 15,
+      "36": 17,
+      "37": 13,
+      "38": 31
+    }
+  },
+  "embeddings": {
+    "shape": [
+      1000,
+      64
+    ],
+    "embedding_dim": 64
+  },
+  "faiss_index": {
+    "size": 1000,
+    "index_type": "IVF",
+    "metric": "cosine"
+  }
+}
