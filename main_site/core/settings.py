@@ -23,10 +23,10 @@ EIS_ML_ROOT = Path(__file__).resolve().parent.parent.parent / 'eis_ml'
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-533ti*za8**9-$u1r4b-5eozv+#4@#mayfn_@_)b9tyhg82fok'
+SECRET_KEY = 'your-secret-key'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = []
 
