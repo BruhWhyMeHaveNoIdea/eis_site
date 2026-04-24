@@ -142,8 +142,11 @@ function escapeHtml(text) {
  * Примечание: На странице тендеров используется tenders.js с улучшенной версией
  */
 function initParserButton() {
-    // Заглушка - функционал перенесён в tenders.js
-    // Чтобы избежать дублирования обработчиков на страницах, где подключён обо�a скрипта
+    const parseBtn = document.getElementById('parseBtn');
+    if (!parseBtn) return;
+    
+    // Устанавливаем флаг, чтобы tenders.js не вешал дублирующий обработчик
+    parseBtn.dataset.parserInitialized = 'true';
 }
 
 /**

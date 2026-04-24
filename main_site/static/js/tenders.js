@@ -404,6 +404,10 @@ function initParserButton() {
     const parseBtn = document.getElementById('parseBtn');
     if (!parseBtn) return;
     
+    // Проверяем, не установлен ли уже обработчик
+    if (parseBtn.dataset.parserInitialized === 'true') return;
+    parseBtn.dataset.parserInitialized = 'true';
+    
     parseBtn.addEventListener('click', async function() {
         const btn = this;
         btn.disabled = true;
