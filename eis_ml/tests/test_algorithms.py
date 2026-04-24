@@ -239,6 +239,7 @@ class TestSelectKBestEdgeCases(unittest.TestCase):
             temp_path = f.name
         
         try:
+            
             algorithm.save_results([], temp_path)
             self.assertTrue(os.path.exists(temp_path))
             

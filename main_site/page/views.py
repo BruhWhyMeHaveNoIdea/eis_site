@@ -11,6 +11,7 @@ from django.db.models import Q
 from django.db.models.functions import Lower, Trim
 from .models import Tenders
 from .utils import update_tenders_from_data
+from pprint import pprint
 
 
 
@@ -74,7 +75,8 @@ def analyze_tender_api(request, tender_id):
                     temp_tender_file,
                     '--historical', str(historical_file),
                     '--model', str(model_path),
-                    '--k', '5'
+                    '--k', '5',
+                    '--json'  # Вывод в формате JSON для API
                 ],
                 capture_output=True,
                 encoding='utf-8',
@@ -82,11 +84,11 @@ def analyze_tender_api(request, tender_id):
                 errors='replace',
                 timeout=120  # 2 минуты на анализ
             )
-            print("RES", result)
             if result.returncode == 0:
                 ml_result = json.loads(result.stdout)
                 return Response(ml_result)
             else:
+                pprint("STDERR", result.stderr)
                 error_msg = result.stderr if result.stderr else 'Неизвестная ошибка ML-анализа'
                 return Response({"error": error_msg}, status=500)
                 

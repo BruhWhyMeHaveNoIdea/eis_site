@@ -164,6 +164,7 @@ class TestInjectionAttacks(unittest.TestCase):
             for json_str in malicious_json_strings:
                 # Write to temp file
                 with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+                    print("DEBUG", json_str)
                     f.write(json_str)
                     temp_path = f.name
                 

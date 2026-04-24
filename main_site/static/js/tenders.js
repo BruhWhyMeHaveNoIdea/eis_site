@@ -132,9 +132,6 @@ async function openModal(tenderId) {
     } else {
         mlContent = `
             <div class="border-t pt-4">
-                <h4 class="text-lg font-bold mb-3 text-purple-700">
-                    <i class="fa-solid fa-robot mr-2"></i>ML-анализ
-                </h4>
                 <div id="mlLoading" class="text-center py-8">
                     <i class="fa-solid fa-spinner fa-spin text-3xl text-purple-600"></i>
                     <p class="mt-2 text-gray-600">Выполняется анализ тендера...</p>
@@ -169,6 +166,7 @@ async function loadMLResults(tenderId) {
     try {
         const response = await fetch(`/api/analyze/${tenderId}/`);
         const data = await response.json();
+        console.log('data,', data)
         
         window.mlResultsCache[tenderId] = data;
         
@@ -193,12 +191,16 @@ async function loadMLResults(tenderId) {
  * @returns {string} HTML
  */
 function renderMLResults(data) {
+    console.log('=== ML Results ===');
+    console.log('Full data:', data);
+    console.log('similar_tenders:', data.similar_tenders);
+    if (data.similar_tenders && data.similar_tenders.length > 0) {
+        console.log('First similar tender:', data.similar_tenders[0]);
+        console.log('Keys in first tender:', Object.keys(data.similar_tenders[0]));
+    }
     if (data.error) {
         return `
             <div class="border-t pt-4">
-                <h4 class="text-lg font-bold mb-3 text-purple-700">
-                    <i class="fa-solid fa-robot mr-2"></i>ML-анализ
-                </h4>
                 <div class="bg-red-50 border border-red-200 rounded-lg p-4">
                     <p class="text-red-700">${escapeHtml(data.error)}</p>
                 </div>
@@ -209,46 +211,92 @@ function renderMLResults(data) {
     let html = '<div class="border-t pt-4">';
     html += '<h4 class="text-lg font-bold mb-3 text-purple-700"><i class="fa-solid fa-robot mr-2"></i>ML-анализ</h4>';
     
-    // Первый подход: прогнозирование цены
-    if (data.first_approach && !data.first_approach.error) {
-        const fa = data.first_approach;
+    // Статус анализатора
+    if (data.analyzer_trained !== undefined) {
+        html += `
+            <div class="mb-4">
+                <span class="px-2 py-1 text-xs rounded-full ${data.analyzer_trained ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">
+                    <i class="fa-solid ${data.analyzer_trained ? 'fa-check-circle' : 'fa-exclamation-circle'} mr-1"></i>
+                    ${data.analyzer_trained ? 'Модель обучена' : 'Модель не обучена'}
+                </span>
+            </div>
+        `;
+    }
+    
+    // Информация о тендере
+    if (data.tender_info) {
+        const ti = data.tender_info;
+        html += `
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+                <h5 class="font-bold text-gray-800 mb-2">
+                    <i class="fa-solid fa-file-contract mr-2"></i>Анализируемый тендер
+                </h5>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                    <div class="md:col-span-2">
+                        <span class="text-gray-500">Наименование:</span>
+                        <p class="font-medium">${escapeHtml(ti.name || '')}</p>
+                    </div>
+                    <div>
+                        <span class="text-gray-500">Заказчик:</span>
+                        <p>${escapeHtml(ti.customer || '')}</p>
+                    </div>
+                    <div>
+                        <span class="text-gray-500">Регион:</span>
+                        <p>${escapeHtml(ti.region || '')}</p>
+                    </div>
+                    <div>
+                        <span class="text-gray-500">НМЦК:</span>
+                        <p class="font-bold text-green-600">${ti.price ? `${ti.price} ₽` : 'Н/Д'}</p>
+                    </div>
+                    <div>
+                        <span class="text-gray-500">Способ определения:</span>
+                        <p>${escapeHtml(ti.procurement_method || '')}</p>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Прогнозирование цены
+    if (data.price_prediction && !data.price_prediction.error) {
+        const pp = data.price_prediction;
         html += `
             <div class="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
                 <h5 class="font-bold text-purple-800 mb-2">
-                    <i class="fa-solid fa-chart-line mr-2"></i>Прогноз цены (Подход 1)
+                    <i class="fa-solid fa-chart-line mr-2"></i>Прогноз цены
                 </h5>
                 <div class="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
                     <div>
                         <span class="text-gray-500">Прогноз:</span>
-                        <p class="font-bold text-green-600">${fa.predicted_price ? `${fa.predicted_price} ₽` : 'Н/Д'}</p>
+                        <p class="font-bold text-green-600">${pp.predicted_price ? `${Number(pp.predicted_price).toLocaleString('ru-RU')} ₽` : 'Н/Д'}</p>
                     </div>
                     <div>
                         <span class="text-gray-500">Метод:</span>
-                        <p class="font-medium">${escapeHtml(fa.method || 'Н/Д')}</p>
+                        <p class="font-medium">${escapeHtml(pp.method || 'Н/Д')}</p>
                     </div>
                     <div>
                         <span class="text-gray-500">Доверие:</span>
-                        <p class="font-medium">${fa.confidence ? `${(fa.confidence * 100).toFixed(1)}%` : 'Н/Д'}</p>
+                        <p class="font-medium">${pp.confidence ? `${(pp.confidence * 100).toFixed(1)}%` : 'Н/Д'}</p>
                     </div>
-                    ${fa.price_range_low && fa.price_range_high ? `
+                    ${pp.price_range && pp.price_range.length === 2 ? `
                     <div>
                         <span class="text-gray-500">Диапазон:</span>
-                        <p class="font-medium">${fa.price_range_low} - ${fa.price_range_high} ₽</p>
+                        <p class="font-medium">${Number(pp.price_range[0]).toLocaleString('ru-RU')} - ${Number(pp.price_range[1]).toLocaleString('ru-RU')} ₽</p>
                     </div>
                     ` : ''}
                     <div>
                         <span class="text-gray-500">Похожих найдено:</span>
-                        <p class="font-medium">${fa.similar_tenders_used} / ${fa.similar_tenders_total}</p>
+                        <p class="font-medium">${pp.similar_tenders_used} / ${pp.similar_tenders_total}</p>
                     </div>
                 </div>
                 
-                ${fa.similar_tenders_preview && fa.similar_tenders_preview.length > 0 ? `
+                ${pp.similar_tenders_preview && pp.similar_tenders_preview.length > 0 ? `
                 <div class="mt-3">
-                    <p class="text-xs text-gray-500 mb-1">Похожие тендеры:</p>
+                    <p class="text-xs text-gray-500 mb-1">Похожие тендеры для прогноза:</p>
                     <ul class="text-xs space-y-1">
-                        ${fa.similar_tenders_preview.map(t => `
+                        ${pp.similar_tenders_preview.map(t => `
                             <li class="bg-white rounded px-2 py-1">
-                                <span class="text-green-600 font-medium">${t.price ? `${t.price} ₽` : ''}</span>
+                                <span class="text-green-600 font-medium">${t.price ? `${Number(t.price).toLocaleString('ru-RU')} ₽` : ''}</span>
                                 <span class="text-gray-400 mx-1">•</span>
                                 <span class="text-blue-600">${t.similarity ? `( ${(t.similarity * 100).toFixed(0)}%)` : ''}</span>
                                 <br>
@@ -260,65 +308,75 @@ function renderMLResults(data) {
                 ` : ''}
             </div>
         `;
-    } else if (data.first_approach && data.first_approach.error) {
-        html += `
-            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
-                <p class="text-yellow-700 text-sm">
-                    <i class="fa-solid fa-triangle-exclamation mr-1"></i>
-                    Подход 1: ${escapeHtml(data.first_approach.error)}
-                </p>
-            </div>
-        `;
     }
     
-    // Второй подход: похожие тендеры
-    if (data.second_approach && !data.second_approach.error) {
-        const sa = data.second_approach;
+    // Похожие тендеры
+    if (data.similar_tenders && data.similar_tenders.length > 0) {
         html += `
-            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
                 <h5 class="font-bold text-blue-800 mb-2">
-                    <i class="fa-solid fa-magnifying-glass mr-2"></i>Похожие тендеры (Подход 2)
+                    <i class="fa-solid fa-magnifying-glass mr-2"></i>Похожие тендеры
                 </h5>
-                ${sa.similar_tenders && sa.similar_tenders.length > 0 ? `
                 <div class="space-y-2">
-                    ${sa.similar_tenders.map((t, i) => `
+                    ${data.similar_tenders.map((t, i) => `
                         <div class="bg-white rounded-lg p-3 text-sm">
                             <div class="flex justify-between items-start mb-1">
                                 <span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs font-medium">
-                                    #${i + 1} • ${(t.similarity_score * 100).toFixed(0)}%
+                                    #${t.rank || i + 1} • ${(t.similarity_score * 100).toFixed(0)}%
                                 </span>
-                                ${t.cluster ? `<span class="text-gray-400 text-xs">Кластер: ${t.cluster}</span>` : ''}
+                                ${t.cluster && t.cluster !== 'N/A' ? `<span class="text-gray-400 text-xs">Кластер: ${escapeHtml(t.cluster)}</span>` : ''}
                             </div>
-                            <p class="font-medium text-gray-900 mb-1 truncate">${escapeHtml(t.name || '')}</p>
+                            <p class="font-medium text-gray-900 mb-1 truncate" title="${escapeHtml(t.tender_name || '')}">${escapeHtml(t.tender_name || '')}</p>
                             <div class="grid grid-cols-2 gap-2 text-xs text-gray-600">
-                                <span><i class="fa-solid fa-building mr-1"></i>${escapeHtml(t.customer || '')}</span>
-                                <span><i class="fa-solid fa-location-dot mr-1"></i>${escapeHtml(t.region || '')}</span>
-                                <span><i class="fa-solid fa-ruble-sign mr-1"></i>${t.price || 'Н/Д'}</span>
-                                <span><i class="fa-solid fa-file-contract mr-1"></i>${escapeHtml(t.method || '')}</span>
+                                <span><i class="fa-solid fa-building mr-1"></i>${t.customer && t.customer !== 'N/A' ? escapeHtml(t.customer) : 'Н/Д'}</span>
+                                <span><i class="fa-solid fa-location-dot mr-1"></i>${t.region && t.region !== 'N/A' ? escapeHtml(t.region) : 'Н/Д'}</span>
+                                <span><i class="fa-solid fa-ruble-sign mr-1"></i>${formatPrice(t.price) || 'Н/Д'}</span>
+                                <span><i class="fa-solid fa-file-contract mr-1"></i>${t.procurement_method && t.procurement_method !== 'N/A' ? escapeHtml(t.procurement_method) : 'Н/Д'}</span>
                             </div>
                         </div>
                     `).join('')}
                 </div>
-                ` : '<p class="text-gray-500 text-sm">Похожие тендеры не найдены</p>'}
-            </div>
-        `;
-    } else if (data.second_approach && data.second_approach.error) {
-        html += `
-            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                <p class="text-yellow-700 text-sm">
-                    <i class="fa-solid fa-triangle-exclamation mr-1"></i>
-                    Подход 2: ${escapeHtml(data.second_approach.error)}
-                </p>
             </div>
         `;
     }
     
-    // Метаданные
+    // Метаданные поиска
+    if (data.search_metadata) {
+        const sm = data.search_metadata;
+        html += `
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4">
+                <h5 class="font-bold text-gray-700 mb-2 text-sm">
+                    <i class="fa-solid fa-circle-info mr-1"></i>Метаданные поиска
+                </h5>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                    <div>
+                        <span class="text-gray-500">Алгоритм:</span>
+                        <p class="font-medium">${escapeHtml(sm.algorithm || '')}</p>
+                    </div>
+                    <div>
+                        <span class="text-gray-500">Найдено:</span>
+                        <p class="font-medium">${sm.results_returned || 0}</p>
+                    </div>
+                    <div>
+                        <span class="text-gray-500">Всего проверено:</span>
+                        <p class="font-medium">${sm.total_tenders_searched || 0}</p>
+                    </div>
+                    <div>
+                        <span class="text-gray-500">Время:</span>
+                        <p class="font-medium">${data.metadata?.execution_time_seconds ? `${data.metadata.execution_time_seconds.toFixed(2)}с` : 'Н/Д'}</p>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Общие метаданные
     if (data.metadata) {
+        const m = data.metadata;
         html += `
             <div class="mt-4 text-xs text-gray-400 text-center">
-                <span>Исторических тендеров: ${data.metadata.historical_tenders_count || 0}</span>
-                ${data.metadata.total_time_seconds ? `<span class="mx-2">•</span><span>Время анализа: ${data.metadata.total_time_seconds.toFixed(2)}с</span>` : ''}
+                <span>Исторических тендеров: ${m.historical_tenders_count || 0}</span>
+                ${m.execution_time_seconds ? `<span class="mx-2">•</span><span>Время анализа: ${m.execution_time_seconds.toFixed(2)}с</span>` : ''}
             </div>
         `;
     }
@@ -373,6 +431,31 @@ function initParserButton() {
             btn.textContent = 'Обновить данные';
         }
     });
+}
+
+/**
+ * Форматирование цены из русского формата (15 766,67) в число
+ * @param {string|number} price - Цена
+ * @returns {string|null} - Отформатированная цена или null
+ */
+function formatPrice(price) {
+    if (!price || price === 'N/A' || price === 'Н/Д') {
+        return null;
+    }
+    
+    // Преобразуем в строку
+    let priceStr = String(price).trim();
+    
+    // Заменяем запятую на точку и удаляем пробелы
+    priceStr = priceStr.replace(/\s/g, '').replace(',', '.');
+    
+    const num = parseFloat(priceStr);
+    
+    if (isNaN(num)) {
+        return null;
+    }
+    
+    return num.toLocaleString('ru-RU') + ' ₽';
 }
 
 /**
