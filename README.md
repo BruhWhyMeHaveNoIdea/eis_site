@@ -48,29 +48,17 @@
 
 Асинхронный парсер на базе [Scrapling](https://github.com/D4Vinci/Scrapling). Обходит страницы поиска zakupki.gov.ru и извлекает полные карточки тендеров по 44-ФЗ.
 
-**Режимы работы:**
-
-| Режим | Точка входа | Результат |
-|-------|-------------|-----------|
-| CLI | `python main.py` | JSON в `art/tenders.json` |
-| API | `GET /parser/start` | Данные импортируются в БД Django |
+**Запуск:** `GET /parser/start` — Django вызывает `parser/parser.py` через subprocess, результат импортируется в БД.
 
 **Парсер работает в два этапа:**
 1. `LinkSpider` — обходит страницы пагинации и собирает ссылки на карточки тендеров.
 2. `TenderSpider` — асинхронно парсит каждую карточку, извлекая все секции (`section__title` / `section__info`), очищает текст через `simple_clean()`.
 
-**CLI-запуск:**
-```bash
-python main.py <start_page> <end_page> <per_page> <pub_date> [--close-date <close_date>]
-```
-
-| Аргумент | Тип | Описание |
-|----------|-----|----------|
-| `start_page` | int | Начальная страница пагинации |
-| `end_page` | int | Конечная страница пагинации |
-| `per_page` | int | Записей на странице (10/50/100) |
-| `pub_date` | str | Дата публикации `ДД.ММ.ГГГГ` |
-| `--close-date` | str | Дата закрытия `ДД.ММ.ГГГГ` (опц.) |
+**Параметры парсинга** (настраиваются в Django views):
+- `start_page`, `end_page` — диапазон страниц пагинации
+- `per_page` — записей на странице (10/50/100)
+- `pub_date` — дата публикации (`ДД.ММ.ГГГГ`)
+- `close_date` — дата закрытия (опц.)
 
 > **Ограничение:** `(end_page - start_page) * per_page <= 1000`
 
@@ -186,7 +174,7 @@ python manage.py runserver
 
 ```
 .
-├── art/                    # Артефакты CLI-парсера (links.json, tenders.json)
+├── art/                    # Артефакты парсера (links.json, tenders.json)
 ├── eis_ml/                 # ML-модуль
 │   ├── core/               # Предобработка, эмбеддинги, метрики сходства
 │   ├── ml/                 # Кластеризация, FAISS, feature engineering, similarity learning
@@ -212,6 +200,5 @@ python manage.py runserver
 │   ├── templates/          # HTML-шаблоны
 │   ├── static/             # CSS, JS
 │   └── manage.py
-├── main.py                 # CLI-точка входа для парсера
 ├── requirements.txt        # Единые зависимости (парсер + Django + ML)
 └── README.md
