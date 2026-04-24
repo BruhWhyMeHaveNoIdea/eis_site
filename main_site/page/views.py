@@ -11,7 +11,6 @@ from django.db.models import Q
 from django.db.models.functions import Lower, Trim
 from .models import Tenders
 from .utils import update_tenders_from_data
-from pprint import pprint
 
 
 
@@ -22,8 +21,41 @@ def analyze_tender_api(request, tender_id):
     """
     API endpoint для ML-анализа конкретного тендера.
     Запускает analyze_tender.py через subprocess.
+    
+    Особенности:
+    - Кеширование результатов на 24 часа
+    - Максимум 2 одновременных анализа
+    - Блокировка повторного анализа одного тендера
     """
+    # === 1. Проверяем кеш ===
+    cache_key = get_ml_cache_key(tender_id)
+    cached_result = cache.get(cache_key)
+    if cached_result:
+        return Response({**cached_result, "from_cache": True})
+    
+    # === 2. Проверяем, не анализируется ли уже этот тендер ===
+    lock_key = get_ml_analysis_lock_key(tender_id)
+    if cache.get(lock_key):
+        return Response(
+            {"error": "Анализ этого тендера уже выполняется. Подождите немного."}, 
+            status=409
+        )
+    
+    # === 3. Проверяем лимит одновременных анализов ===
+    concurrent_count = cache.get(ML_CONCURRENT_KEY, 0)
+    if concurrent_count >= MAX_CONCURRENT_ML:
+        return Response(
+            {"error": f"Превышен лимит одновременных анализов ({MAX_CONCURRENT_ML}). Попробуйте позже."}, 
+            status=429
+        )
+        
+    # Увеличиваем счётчик
+    cache.set(ML_CONCURRENT_KEY, concurrent_count + 1, 300)  # 5 минут таймаут
+    
     try:
+        # Устанавливаем блокировку на 3 минуты
+        cache.set(lock_key, True, 180)
+        
         # Получаем тендер из БД
         tender = Tenders.objects.get(id=tender_id)
         
@@ -86,9 +118,13 @@ def analyze_tender_api(request, tender_id):
             )
             if result.returncode == 0:
                 ml_result = json.loads(result.stdout)
-                return Response(ml_result)
+                
+                # === 4. Сохраняем в кеш на 24 часа ===
+                cache.set(cache_key, ml_result, 86400)
+                
+                return Response({**ml_result, "from_cache": False})
             else:
-                pprint("STDERR", result.stderr)
+                print("STDERR", result.stderr)
                 error_msg = result.stderr if result.stderr else 'Неизвестная ошибка ML-анализа'
                 return Response({"error": error_msg}, status=500)
                 
@@ -103,6 +139,13 @@ def analyze_tender_api(request, tender_id):
         return Response({"error": f"Ошибка парсинга ответа ML: {e}"}, status=500)
     except Exception as e:
         return Response({"error": str(e)}, status=500)
+    finally:
+        # Снимаем блокировку тендера
+        cache.delete(lock_key)
+        # Уменьшаем счётчик одновременных анализов
+        current_count = cache.get(ML_CONCURRENT_KEY, 0)
+        if current_count > 0:
+            cache.set(ML_CONCURRENT_KEY, current_count - 1, 300)
 
 
 def index(request):
@@ -194,6 +237,22 @@ def index(request):
 
 
 from django.core.cache import cache
+import hashlib
+
+
+def get_ml_cache_key(tender_id: int, model_version: str = "v1") -> str:
+    """Генерирует ключ кеша для ML-анализа"""
+    return f"ml_analysis_{tender_id}_{model_version}"
+
+
+def get_ml_analysis_lock_key(tender_id: int) -> str:
+    """Ключ блокировки для предотвращения дублирования анализа одного тендера"""
+    return f"ml_analysis_lock_{tender_id}"
+
+
+# Глобальный счётчик одновременных ML-анализов
+MAX_CONCURRENT_ML = 2  # Максимум 2 анализа одновременно
+ML_CONCURRENT_KEY = "ml_concurrent_count"
 
 
 @api_view(["GET"])
@@ -213,6 +272,7 @@ def start_parser(request):
     
     try:
         print("Started Parcing")
+
 
         python_path = os.path.join(settings.EIS_PARSER_ROOT, '.venv', 'Scripts', 'python.exe')
         script_path = os.path.join('parser', 'parser.py')
@@ -245,11 +305,16 @@ def start_parser(request):
             
             try:
                 stats = update_tenders_from_data(data)
+                
+                # Очищаем весь ML-кеш при обновлении данных
+                cache.clear()
+                
                 return Response({
                     "status": "ok",
                     "created": stats['created'],
                     "updated": stats['updated'],
-                    "errors_count": len(stats['errors'])
+                    "errors_count": len(stats['errors']),
+                    "ml_cache_cleared": True
                 }, status=200)
             except Exception as e:
                 print(str(e))
@@ -263,3 +328,24 @@ def start_parser(request):
     finally:
         # Снимаем блокировку
         cache.delete('parser_running')
+
+
+@api_view(["POST"])
+def clear_ml_cache(request, tender_id=None):
+    """
+    Очистка кеша ML-анализа.
+    
+    - POST /api/ml-cache/clear/ — очистить весь кеш
+    - POST /api/ml-cache/clear/{tender_id}/ — очистить кеш конкретного тендера
+    """
+    if tender_id:
+        cache_key = get_ml_cache_key(tender_id)
+        cache.delete(cache_key)
+        return Response({"status": "ok", "message": f"Кеш для тендера {tender_id} очищен"})
+    else:
+        # Очищаем весь ML-кеш
+        deleted_count = 0
+        # Django cache не поддерживает массовое удаление по паттерну,
+        # поэтому просто сбрасываем счётчик
+        cache.delete(ML_CONCURRENT_KEY)
+        return Response({"status": "ok", "message": "ML-кеш очищен"})

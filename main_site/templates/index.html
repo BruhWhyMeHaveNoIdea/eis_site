@@ -137,21 +137,19 @@
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
                 <tr>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ИКЗ</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Наименование</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Заказчик</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Регион</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">НМЦК, ₽</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Окончание</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Этап</th>
-                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Проанализировать</th>
+                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Изучить</th>
                 </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
                 {% if tenders %}
                     {% for tender in tenders %}
                     <tr class="hover:bg-gray-50">
-                        <td class="px-4 py-3 text-sm text-gray-900 whitespace-nowrap">{{ tender.icz }}</td>
                         <td class="px-4 py-3 text-sm text-gray-900 max-w-xs truncate" title="{{ tender.object_name }}">
                             {{ tender.object_name|truncatechars:50 }}
                         </td>
@@ -186,7 +184,7 @@
                     {% endfor %}
                 {% else %}
                     <tr>
-                        <td colspan="8" class="px-4 py-8 text-center text-gray-500">
+                        <td colspan="7" class="px-4 py-8 text-center text-gray-500">
                             {% if filters.search or filters.region or filters.procurement_method or filters.stage %}
                                 По вашим фильтрам ничего не найдено
                             {% else %}
