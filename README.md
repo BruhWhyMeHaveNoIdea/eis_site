@@ -152,38 +152,30 @@ git clone https://gitverse.ru/Vprs/eis_parser.git
 cd eis_parser
 ```
 
-### 2. Окружение парсера + Django
+### 2. Единое виртуальное окружение
+Все зависимости (парсер, Django, ML) собраны в одном `requirements.txt`:
 ```bash
 python -m venv venv
 venv\Scripts\activate
 pip install -r requirements.txt
-pip install django djangorestframework
 ```
 
-### 3. Окружение ML (отдельное)
-```bash
-cd eis_ml
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-cd ..
-```
+> **Примечание:** `parser/requirements.txt` и `eis_ml/requirements.txt` сохранены для справки, но развёртывание идёт из корневого файла.
 
-### 4. Обучение ML-модели
+### 3. Обучение ML-модели
 ```bash
 cd eis_ml
-.venv\Scripts\activate
 python train_ml_model.py -d tenders.json
 ```
 
-### 5. Запуск веб-интерфейса
+### 4. Запуск веб-интерфейса
 ```bash
 cd main_site
 python manage.py migrate
 python manage.py runserver
 ```
 
-### 6. Использование
+### 5. Использование
 1. Откройте `http://127.0.0.1:8000/` — таблица тендеров.
 2. Нажмите «Запуск парсера» (`/parser/start`) — данные за последний месяц сохранятся в БД.
 3. Выберите тендер и нажмите «Анализ» — ML найдёт похожие и спрогнозирует цену.
@@ -221,5 +213,5 @@ python manage.py runserver
 │   ├── static/             # CSS, JS
 │   └── manage.py
 ├── main.py                 # CLI-точка входа для парсера
-├── requirements.txt        # Зависимости парсера
+├── requirements.txt        # Единые зависимости (парсер + Django + ML)
 └── README.md
