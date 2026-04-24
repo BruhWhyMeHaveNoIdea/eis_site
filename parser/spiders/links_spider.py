@@ -19,7 +19,7 @@ class LinkSpider(Spider):
     start_urls = []    # Переопределяем при инициализации объекта
 
     def __init__(self, start_page: int, end_page: int, per_page: int, pub_date: str, close_date: str = "", *args, **kwargs):
-        super(LinkSpider, self).__init__(*args, **kwargs)
+        # Устанавливаем start_urls ДО вызова родительского __init__
         collector = LinksCollector(
             start_page=start_page,
             end_page=end_page,
@@ -28,6 +28,7 @@ class LinkSpider(Spider):
             close_date=close_date
         )
         self.start_urls = collector.collect_pagination()  # Динамически генерируем
+        super(LinkSpider, self).__init__(*args, **kwargs)
 
     async def parse(self, response: Response):
         '''Парсим ссылки на все тендеры из фильтра. Ввиду своей неопытности и еще чего-то (уже не помню)

@@ -1,13 +1,18 @@
+import logging
+import sys
+import io
+import os
+
+# Полностью отключаем логирование ДО импорта scrapling
+logging.disable(logging.CRITICAL)
+logging.basicConfig = lambda *args, **kwargs: None  # Блокируем basicConfig
+
 from cfg.validate_pars import validate_parser_params
 from spiders.links_spider import LinkSpider
 from spiders.tenders_spider import TenderSpider
 import json
 
-
-import sys
-import io
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
-sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
 class Parser():
     '''Основной класс парсера, передаем аргументы как атрибуты объекта'''
@@ -52,7 +57,13 @@ class Parser():
 
     def get_links(self):
         '''Собираем все ссылки на тендеры через паука, сохраняем в self.links'''
-        link_spider = LinkSpider(start_urls=self.pagination_links).start()
+        link_spider = LinkSpider(
+            start_page=self.start_page,
+            end_page=self.end_page,
+            per_page=self.per_page,
+            pub_date=self.pub_date,
+            close_date=self.close_date or ""
+        ).start()
         full_links = ['https://zakupki.gov.ru/' + item['link'] for item in link_spider.items]
         self.links = full_links
 
@@ -70,6 +81,6 @@ class Parser():
         return self.tenders
         
 if __name__ == "__main__":
-    parser = Parser(1, 2, 5, '10.2.2024')
+    parser = Parser(1, 10, 5, '10.2.2024')
     result = parser.start()
     print(json.dumps(result, ensure_ascii=False, default=str), flush=True)

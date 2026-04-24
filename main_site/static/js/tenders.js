@@ -191,13 +191,6 @@ async function loadMLResults(tenderId) {
  * @returns {string} HTML
  */
 function renderMLResults(data) {
-    console.log('=== ML Results ===');
-    console.log('Full data:', data);
-    console.log('similar_tenders:', data.similar_tenders);
-    if (data.similar_tenders && data.similar_tenders.length > 0) {
-        console.log('First similar tender:', data.similar_tenders[0]);
-        console.log('Keys in first tender:', Object.keys(data.similar_tenders[0]));
-    }
     if (data.error) {
         return `
             <div class="border-t pt-4">
@@ -311,6 +304,7 @@ function renderMLResults(data) {
     }
     
     // Похожие тендеры
+
     if (data.similar_tenders && data.similar_tenders.length > 0) {
         html += `
             <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
@@ -416,12 +410,24 @@ function initParserButton() {
         btn.textContent = 'Обновление...';
         
         try {
-            const response = await fetch('/api/start-parser/');
+            const response = await fetch('/api/start-parcer');
+            
+            // Проверяем Content-Type
+            const contentType = response.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+                throw new Error("Сервер вернул не JSON (ошибка " + response.status + ")");
+            }
+            
+            const data = await response.json();
+            
             if (response.ok) {
-                alert('Данные обновлены!');
+                const msg = `Данные обновлены!\n+ Создано: ${data.created}\n~ Обновлено: ${data.updated}` + 
+                           (data.errors_count > 0 ? `\n! Ошибок: ${data.errors_count}` : '');
+                alert(msg);
                 location.reload();
+            } else if (response.status === 409) {
+                alert('Парсер уже запущен. Пожалуйста, дождитесь завершения.');
             } else {
-                const data = await response.json();
                 alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
             }
         } catch (e) {

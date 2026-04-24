@@ -193,32 +193,73 @@ def index(request):
 
 
 
+from django.core.cache import cache
+
+
 @api_view(["GET"])
 def start_parser(request):
-    print("Started Parcing")
-
-    python_path = os.path.join(settings.EIS_PARSER_ROOT, '.venv', 'Scripts', 'python.exe')
-    script_path = os.path.join('parser', 'parser.py')
-
-    env = os.environ.copy()
-    env['PYTHONIOENCODING'] = 'utf-8'
-
-    result = subprocess.run(
-        [python_path, script_path],
-        capture_output=True, 
-        encoding='utf-8',
-        cwd=settings.EIS_PARSER_ROOT, #TODO: Fix cwd
-        errors='replace',
-        env=env
-    )
+    """
+    Запуск парсера с защитой от одновременных запусков.
+    """
+    # Проверяем, не запущен ли уже парсер
+    if cache.get('parser_running'):
+        return Response(
+            {"error": "Парсер уже запущен. Пожалуйста, дождитесь завершения."}, 
+            status=409
+        )
     
-    if result.returncode == 0:
-        data = json.loads(result.stdout)
+    # Устанавливаем блокировку на 10 минут (максимальное время выполнения)
+    cache.set('parser_running', True, 600)
+    
+    try:
+        print("Started Parcing")
+
+        python_path = os.path.join(settings.EIS_PARSER_ROOT, '.venv', 'Scripts', 'python.exe')
+        script_path = os.path.join('parser', 'parser.py')
+
+        env = os.environ.copy()
+        env['PYTHONIOENCODING'] = 'utf-8'
+
+        result = subprocess.run(
+            [python_path, script_path],
+            capture_output=True, 
+            encoding='utf-8',
+            cwd=settings.EIS_PARSER_ROOT,
+            errors='replace',
+            env=env,
+            timeout=600  # 10 минут таймаут
+        )
         
-        try:
-            update_tenders_from_data(data)
-            return Response(status=200)
-        except Exception as e:
-            print(str(e))
-            return Response({"error": str(e)}, status=500)
-    return Response({'error': result.stderr}, status=500)
+        # Логируем вывод для отладки
+        print(f"Return code: {result.returncode}")
+        print(f"Stdout length: {len(result.stdout)}")
+        print(f"Stderr length: {len(result.stderr)}")
+        
+        if result.returncode == 0:
+            try:
+                data = json.loads(result.stdout)
+            except json.JSONDecodeError as e:
+                print(f"JSON decode error: {e}")
+                print(f"Stdout preview: {result.stdout[:500]}")
+                return Response({"error": f"Ошибка парсинга JSON: {e}", "stdout_preview": result.stdout[:500]}, status=500)
+            
+            try:
+                stats = update_tenders_from_data(data)
+                return Response({
+                    "status": "ok",
+                    "created": stats['created'],
+                    "updated": stats['updated'],
+                    "errors_count": len(stats['errors'])
+                }, status=200)
+            except Exception as e:
+                print(str(e))
+                return Response({"error": str(e)}, status=500)
+        else:
+            print(f"Parser error: {result.stderr}")
+            return Response({'error': result.stderr}, status=500)
+    
+    except subprocess.TimeoutExpired:
+        return Response({"error": "Превышено время выполнения парсера (10 мин)"}, status=500)
+    finally:
+        # Снимаем блокировку
+        cache.delete('parser_running')

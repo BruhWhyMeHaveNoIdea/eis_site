@@ -26,9 +26,9 @@ EIS_ML_ROOT = Path(__file__).resolve().parent.parent.parent / 'eis_ml'
 SECRET_KEY = 'your-secret-key'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 
 # Application definition

@@ -349,7 +349,7 @@ def analyze_tender(new_tender_file: str, historical_data_file: str = "tenders.js
                 
                 # Извлечь ключевые поля
                 name = tender.get('Наименование объекта закупки', 'N/A')
-                customer = tender.get('Заказчик', 'N/A')
+                customer = tender.get('Организация, осуществляющая размещение', 'N/A')
                 price = tender.get('Начальная (максимальная) цена контракта', 'N/A')
                 region = tender.get('Регион', 'N/A')
                 method = tender.get('Способ определения поставщика (подрядчика, исполнителя)', 'N/A')
