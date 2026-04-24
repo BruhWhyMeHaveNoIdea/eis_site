@@ -139,32 +139,11 @@ function escapeHtml(text) {
 
 /**
  * Инициализация кнопки парсера
+ * Примечание: На странице тендеров используется tenders.js с улучшенной версией
  */
 function initParserButton() {
-    const parseBtn = document.getElementById('parseBtn');
-    if (!parseBtn) return;
-    
-    parseBtn.addEventListener('click', async function() {
-        const btn = this;
-        btn.disabled = true;
-        btn.textContent = 'Обновление...';
-        
-        try {
-            const response = await fetch('/api/start-parser/');
-            if (response.ok) {
-                alert('Данные обновлены!');
-                location.reload();
-            } else {
-                const data = await response.json();
-                alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
-            }
-        } catch (e) {
-            alert('Ошибка соединения: ' + e.message);
-        } finally {
-            btn.disabled = false;
-            btn.textContent = 'Обновить данные';
-        }
-    });
+    // Заглушка - функционал перенесён в tenders.js
+    // Чтобы избежать дублирования обработчиков на страницах, где подключён обо�a скрипта
 }
 
 /**
